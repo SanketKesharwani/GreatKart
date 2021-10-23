@@ -1,9 +1,11 @@
-from django.shortcuts import render,redirect,HttpResponse
+from django.shortcuts import render,redirect
+from django.http import JsonResponse
 from carts.models import CartItem
 from .forms import OrderForm
 import datetime
 from .models import Order,Payment
 import json
+from store.models import Product
 # Create your views here.
 
 def payments(request):
@@ -33,7 +35,25 @@ def payments(request):
         orderproduct.quantity = item.quantity
         orderproduct.product_price = item.product.price
         orderproduct.ordered = True
-        orderproduct.save() 
+        orderproduct.save()
+
+        cart_item = CartItem.objects.get(id=item.id)
+        product_variation = cart_item.variations.all()
+        orderproduct = OrderProduct.objects.get(id=orderproduct.id)
+        orderproduct.variations.set(product_variation)
+        orderprodutc.save()
+        #decrease stock quantity
+        product = Product.objects.get(id=item.product_id)
+        product.stock -= item.quantity
+        product.save()
+        #remove cart after ordered
+        CartItem.objects.filter(user=request.user).delete()
+        #send transaction info to order_complete page
+        data = {
+            'order_number':order.order_number,
+            'transID': payment.payment_id,
+        }
+        return JsonResponse(data)
 
     return render(request,'orders/payments.html')
 
@@ -90,3 +110,6 @@ def place_order(request,total = 0,quantity=0):
             return render(request, 'orders/payments.html', context)
     else:
         return redirect('checkout')
+
+def order_complete(request):
+    return render(request,'orders/order_complete.html')
