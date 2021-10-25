@@ -1,4 +1,4 @@
-from django.shortcuts import render,get_object_or_404
+from django.shortcuts import render,get_object_or_404,redirect
 from .models import Product,ReviewRating
 from category.models import Category
 from carts.models import CartItem
@@ -7,6 +7,7 @@ from django.http import HttpResponse
 from django.core.paginator import Paginator,EmptyPage,PageNotAnInteger
 from django.db.models import  Q
 from .forms import ReviewForm
+from django.contrib import messages
 
 def store(request,category_slug=None):
     categories = None
@@ -37,9 +38,12 @@ def product_detail(request,category_slug,product_slug):
         in_cart = CartItem.objects.filter(cart__card_id = _cart_id(request),product=single_product).exists()
     except Exception as e:
         raise e
+
+    reviews = ReviewRating.objects.filter(product_id=single_product.id,status = True)
     context = {
         'single_product':single_product,
         'in_cart':in_cart,
+        'reviews': reviews,
     }
     return render(request,'store/product_detail.html',context)
 
@@ -57,7 +61,7 @@ def search(request):
 
 def submit_review(request,product_id):
     url = request.META.get('HTTP_REFERER')
-    if request.method == 'POST':
+    if request.method == "POST":
         try:
             review = ReviewRating.objects.get(user__id = request.user.id,product__id = product_id)
             form = ReviewForm(request.POST,instance=review)
