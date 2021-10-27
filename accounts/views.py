@@ -14,6 +14,7 @@ from django.core.mail import EmailMessage
 from carts.views import _cart_id
 from carts.models import Cart,CartItem
 import requests
+from orders.models import Order
 # Create your views here.
 def register(request):
     if request.method == 'POST':
@@ -129,7 +130,12 @@ def logout(request):
 
 @login_required(login_url = 'login')
 def dashboard(request):
-    return render(request,'accounts/dashboard.html')
+    order = Order.objects.filter(user_id=request.user.id,is_ordered=True).order_by('-created_at')
+    order_quantity = order.count()
+    context = {
+        'order_quantity':order_quantity
+    }
+    return render(request,'accounts/dashboard.html',context)
 
 def forgetpassword(request):
     if request.method == 'POST':
@@ -188,3 +194,13 @@ def resetpassword(request):
             messages.error(request,'Password do not match')
             return redirect('resetpassword')
     return render(request,'accounts/resetpassword.html')
+
+def my_orders(request):
+    orders = Order.objects.filter(user_id=request.user.id,is_ordered=True).order_by('-created_at')
+    context = {
+        'orders':orders,
+    }
+    return render(request,'accounts/my_orders.html',context)
+
+def edit_profile(request):
+    return render(request,'accounts/edit_profile.html')
