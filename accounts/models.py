@@ -61,3 +61,18 @@ class Account(AbstractUser):
 
     def has_module_prems(self,add_lable):
         return True
+
+class UserProfile(models.Model):
+    user = models.ForeignKey(Account, on_delete=models.CASCADE)
+    address_line_1 = models.CharField(max_length=200,blank=True)
+    address_line_2 = models.CharField(max_length=200,blank=True)
+    city = models.CharField(max_length=50)
+    state = models.CharField(max_length=50)
+    country = models.CharField(max_length=50)
+    profile_picture = models.ImageField(blank=True,upload_to='userprofile')
+
+    def __str__(self):
+        return self.user.first_name
+
+    def full_address(self):
+        return f'{self.address_line_1} {self.address_line_2}'
