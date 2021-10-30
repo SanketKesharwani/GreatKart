@@ -202,11 +202,12 @@ def my_orders(request):
     }
     return render(request,'accounts/my_orders.html',context)
 
+@login_required(login_url = 'login')
 def edit_profile(request):
     userprofile = get_object_or_404(UserProfile, user=request.user)
     if request.method == 'POST':
         userform = UserForm(request.POST,instance=request.user)
-        profileform = UserProfileForm(request.POST,request.FILES,instance=request.user)
+        profileform = UserProfileForm(request.POST,request.FILES,instance=userprofile)
         if userform.is_valid() and profileform.is_valid():
             userform.save()
             profileform.save()
@@ -221,3 +222,28 @@ def edit_profile(request):
         'userprofile':userprofile
     }
     return render(request,'accounts/edit_profile.html',context)
+
+@login_required(login_url = 'login')
+def change_password(request):
+    if request.method == 'POST':
+        current_password = request.POST['current_password']
+        new_password = request.POST['new_password']
+        confirm_password = request.POST['confirm_password']
+        user = Account.objects.get(username__exact = request.user.username)
+        if(new_password == confirm_password):
+            success = user.check_password(current_password)
+            if success:
+                user.set_password(new_password)
+                user.save()
+                messages.success(request,'Password Updated Successfully')
+                return redirect('change_password')
+            else:
+                messages.error(request,'Please Enter Valid Current Password')
+                return redirect('change_password')
+        else:
+            messages.error(request,'Password Does Not Match')
+            return redirect('change_password')
+    return render(request,'accounts/change_password.html')
+
+def order_detail(request,order_id):
+    return render(request,'accounts/order_detail.html')
